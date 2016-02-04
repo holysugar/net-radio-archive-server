@@ -1,0 +1,62 @@
+---
+- hosts: server
+  gather_facts: no
+  become: on
+
+  tasks:
+    - user: name=netradio
+    - apt: update_cache=yes cache_valid_time=86400
+    - apt: name={{item}}
+      with_items:
+        - rtmpdump
+        - swftools
+        - ruby
+        - mysql-server
+
+    - gem: name=bundler
+
+    - copy:
+        dest: /etc/environment
+        content: |
+          DATABASE_URL=mysql2://root@localhost:3306/netradio
+          RAILS_ENV=production
+
+    # see http://johnvansickle.com/ffmpeg/
+    # FIXME version
+    - unarchive:
+        src: http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
+        dest: /usr/local
+        copy: no
+        creates: /usr/local/ffmpeg-2.8.6-64bit-static
+    - file:
+        src:  /usr/local/ffmpeg-2.8.6-64bit-static/ffmpeg
+        dest: /usr/local/bin/ffmpeg
+        state: link
+
+    - file:
+        dest: /var/lib/netradio
+        state: directory
+        owner: netradio
+
+    - git:
+        repo: https://github.com/yayugu/net-radio-archive.git
+        dest: /var/lib/netradio
+        accept_hostkey: yes
+      become_user: netradio
+
+    - shell: bundle install --without development test --path vendor/bundle
+      args:
+        chdir: /var/lib/netradio
+      become_user: netradio
+
+    - copy:
+        src: settings.yml
+        dest: /var/lib/netradio/config/settings.yml
+
+    - shell: |
+        bundle exec rake db:create db:migrate
+        bundle exec whenever --update-crontab
+      args:
+        chdir: /var/lib/netradio
+      become_user: netradio
+
