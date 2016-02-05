@@ -11,7 +11,10 @@
         - rtmpdump
         - swftools
         - ruby
+        - nodejs
         - mysql-server
+        - libffi-dev # gem dependency
+        - libmysqlclient-dev
 
     - gem: name=bundler
 
