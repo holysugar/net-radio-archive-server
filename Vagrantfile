@@ -11,10 +11,10 @@ Vagrant.configure(2) do |config|
 
     # node.vm.synced_folder "../data", "/vagrant_data"
 
-    # node.vm.provider "virtualbox" do |vb|
-    #   vb.gui = true
-    #   vb.memory = "1024"
-    # end
+    node.vm.provider "virtualbox" do |vb|
+      #vb.gui = true
+      vb.memory = "1024"
+    end
 
     node.vm.provision "ansible" do |ansible|
       ansible.playbook = 'server.yml'
